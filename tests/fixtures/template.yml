@@ -1,0 +1,66 @@
+include:
+
+placeholders:
+    version:
+        type: int
+        format_spec: 3
+
+    name:
+        type: str
+
+    project:
+        type: str
+
+    render_extension:
+        type: str
+        choices:
+            mp4: MP4
+            mov: Mov
+        default: mp4
+
+    maya_extension:
+        type: str
+        choices:
+            ma: Maya Ascii (.ma)
+            mb: Maya Binary (.mb)
+        default: ma
+
+    test:
+        type: str
+    bonjour:
+        type: str
+
+paths:
+
+    asset_root: '/prod/project/asset'
+    shot_root: '/prod/project/shot'
+
+    #
+    # Maya
+    #
+
+    # define the location of a work area
+    asset_work_area_maya:
+        definition: '@asset_root/work/maya'
+    # define the location of a publish area
+    asset_publish_area_maya:
+        definition: '@asset_root/publish/maya'
+    # The location of WIP files
+    maya_asset_work:
+        definition: '@asset_root/work/maya/{name}.v{version}.{maya_extension}'
+    # The location of published maya files
+    maya_asset_publish:
+        # definition: '@asset_root/publish/maya/{name}/pipi/@hello'
+        # definition: '@asset_root/publish/maya/{name}[_{test}]/@hello'
+        definition: '@asset_root/publish/maya/{name}[_{bonjour}]/@hello'
+
+
+    test_string:
+        definition: '@asset_root/test/@hello.exr'
+
+    photoshop_file:
+        definition: '@shot_root/work/{test}/photoshop/{name}.v{version}.psd'
+
+
+strings:
+    hello: '{name}[_{test}]_v{version}.{maya_extension}'
