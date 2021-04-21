@@ -3,7 +3,11 @@ import yaml
 import pathlib
 
 from utils import utils_paths, templates_utils
-from placeholders import StringPlaceholder, IntegerPlaceholder
+from placeholders import (
+    StringPlaceholder,
+    IntegerPlaceholder,
+    PLACEHOLDERS_MAPPING,
+)
 import errors
 
 from pprint import pprint
@@ -23,13 +27,10 @@ class ProdexTemplate(object):
         self._templates = {}
         self._strings = {}
 
-        self._placeholders_mapping = {
-            "str": StringPlaceholder,
-            "int": IntegerPlaceholder
-        }
-
         # Init vars
-        self._content = utils_paths.recurssive_parser(path=self.template_path, visited=[])
+        self._content = utils_paths.recurssive_parser(
+            path=self.template_path, visited=[]
+        )
         self._paths, self._root_paths = templates_utils.paths_categorization(
             paths=self._content.get("paths", {})
         )
@@ -70,6 +71,11 @@ class ProdexTemplate(object):
         return self._strings.copy()
 
     def _parse_templates(self):
+        """Parse all templates found in the configuration
+
+        :raises ValueError: [description]
+        :raises ValueError: [description]
+        """
         for template_name, template_path in self._paths.items():
 
             path = template_path.get("definition")
@@ -95,19 +101,29 @@ class ProdexTemplate(object):
             new_path = pathlib.Path(*parts)
             template_path["definition"] = new_path
 
-            placeholders_found = templates_utils.find_placeholder(path=str(new_path))
-            placeholders = {x: v for x, v in self._placeholders.items() if x in placeholders_found}
+            placeholders_found = templates_utils.find_placeholder(
+                path=str(new_path)
+            )
+            placeholders = {
+                x: v
+                for x, v in self._placeholders.items()
+                if x in placeholders_found
+            }
 
-            template = Template(definition=new_path, name=template_name, placeholders=placeholders)
+            template = Template(
+                definition=new_path,
+                name=template_name,
+                placeholders=placeholders,
+            )
             self._templates[template_name] = template
 
     def _parse_placeholders(self):
+        """Parses placeholders of the configuration"""
         placeholders = self._content.get("placeholders")
         for placehodler_name, attributes in placeholders.items():
-            class_object = self._placeholders_mapping.get(attributes.get("type"))
+            class_object = PLACEHOLDERS_MAPPING.get(attributes.get("type"))
             placeholder = class_object(name=placehodler_name, **attributes)
             self._placeholders[placehodler_name] = placeholder
-
 
     def templates_from_path(self, path):
         """Finds templates that matches the given path
@@ -140,12 +156,13 @@ class ProdexTemplate(object):
             return matched_templates[0]
         else:
             # Multiple templates
-            raise Exception() # TODO
+            raise Exception()  # TODO
 
 
 class String(object):
     def __init__(self):
         pass
+
 
 class Template(object):
     def __init__(self, definition, name, placeholders):
@@ -155,17 +172,19 @@ class Template(object):
         self._placeholders = placeholders
 
         self._all_definitions = self._definition_variations(self._path)
-        # print(self, self._placeholders)
 
     def __repr__(self):
+        return self._get_repr()
+
+    def __str__(self):
+        return self._get_repr()
+
+    def _get_repr(self):
         return "<%s %s: %s>" % (
-            __class__.__name__,
+            self.__class__.__name__,
             self._name,
             self._path,
         )
-
-    def __str__(self):
-        return "%s %s" % (__class__.__name__, self._name)
 
     @property
     def path(self):
@@ -205,7 +224,9 @@ class Template(object):
         """
         # 1. Check if the number of parts in the given path correspond
         # to the number of parts for an existing definition for this template
-        if not templates_utils.parts_matching(path=path, definitions=self.definitions):
+        if not templates_utils.parts_matching(
+            path=path, definitions=self.definitions
+        ):
             return False
 
         # 2. Try to resolve placeholders. If we found something, the path is
@@ -219,13 +240,15 @@ class Template(object):
         match = False
         self._conform_input_placeholders(placeholders=resolved_placeholders)
         for definition in self.definitions:
-            _path = self._set_placeholders_values(definition=definition, placeholders=resolved_placeholders)
+            _path = self._set_placeholders_values(
+                definition=definition, placeholders=resolved_placeholders
+            )
             if str(_path) == path:
                 match = True
         return match
 
     def _definition_variations(self, definition):
-        """Finds all possible paths for the given definition(from the template)
+        """Finds all possible paths for the given definition (from the template)
 
         "{foo}"               ==> ['{foo}']
         "{foo}_{bar}"         ==> ['{foo}_{bar}']
@@ -280,7 +303,6 @@ class Template(object):
         # Remove empty strings
         return [x for x in tokens if x]
 
-
     def get_placeholders_values(self, path):
         """Gets the placeholders values from the given path.
 
@@ -299,7 +321,7 @@ class Template(object):
         """
         error = None
         for definition in self.definitions:
-            resolved = {} # All resolved placeholders
+            resolved = {}  # All resolved placeholders
             _definition = definition
             _path = path
             tokens = self._calc_static_tokens(definition=definition)
@@ -331,7 +353,11 @@ class Template(object):
                     )
                     break
 
-                if not path_decompose[0] and not path_decompose[1] and not path_decompose[2]:
+                if (
+                    not path_decompose[0]
+                    and not path_decompose[1]
+                    and not path_decompose[2]
+                ):
                     # path and token are not synchronized, so it is not the path
                     error = "Path and the token aren't synchronised anymore"
                     break
@@ -346,19 +372,23 @@ class Template(object):
                         break
                 else:
                     error = None
-                    resolved[placeholder_obj.name] = placeholder_obj.sanitize_value(value)
+                    resolved[
+                        placeholder_obj.name
+                    ] = placeholder_obj.sanitize_value(value)
                     # print(value)
                     # print(placeholder_obj.sanitize_value(value))
 
                 _path = path_decompose[0]
                 _definition = definition_decompose[0]
 
-            placeholders = list(set(templates_utils.find_placeholder(definition)))
+            placeholders = list(
+                set(templates_utils.find_placeholder(definition))
+            )
             if len(placeholders) == len(resolved) and not error:
                 # find all possible values.
                 return resolved
             else:
-                resolved={}
+                resolved = {}
         return resolved
 
     def set_placeholders_values(self, placeholders):
@@ -382,7 +412,9 @@ class Template(object):
 
         # Apply placeholders
         for definition in self.definitions:
-            path = self._set_placeholders_values(definition=definition, placeholders=placeholders)
+            path = self._set_placeholders_values(
+                definition=definition, placeholders=placeholders
+            )
             if path:
                 # Path found ! return it.
                 return pathlib.Path(path)
@@ -402,13 +434,14 @@ class Template(object):
         :rtype: str
         """
         # https://stackoverflow.com/questions/17215400/format-string-unused-named-arguments
-        path = definition.format_map(SafeDict(**placeholders)) # Py3
+        path = definition.format_map(
+            templates_utils.SafeDict(**placeholders)
+        )  # Py3
         unresolved_placeholders = templates_utils.find_placeholder(path)
         if unresolved_placeholders:
             # We have unresolved placeholder
             return None
         return path
-
 
     def _check_input_placeholders(self, placeholders):
         """Check given placeholders with detected placeholders in the current
@@ -443,7 +476,9 @@ class Template(object):
                 continue
             placeholders[key] = self.placeholders.get(key).conform_value(value)
 
-        missing_placeholders = [x for x in self.placeholders if x not in evaluated]
+        missing_placeholders = [
+            x for x in self.placeholders if x not in evaluated
+        ]
 
         # Check missing placeholder for default values
         for key in missing_placeholders:
@@ -451,10 +486,3 @@ class Template(object):
                 continue
             placeholders[key] = self.placeholders.get(key).default
         return placeholders
-
-
-
-class SafeDict(dict):
-    def __missing__(self, key):
-        return '{' + key + '}'
-

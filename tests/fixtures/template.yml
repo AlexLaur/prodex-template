@@ -25,9 +25,11 @@ placeholders:
             mb: Maya Binary (.mb)
         default: ma
 
-    test:
+    foo:
         type: str
-    bonjour:
+    bar:
+        type: str
+    baz:
         type: str
 
 paths:
@@ -50,17 +52,15 @@ paths:
         definition: '@asset_root/work/maya/{name}.v{version}.{maya_extension}'
     # The location of published maya files
     maya_asset_publish:
-        # definition: '@asset_root/publish/maya/{name}/pipi/@hello'
-        # definition: '@asset_root/publish/maya/{name}[_{test}]/@hello'
-        definition: '@asset_root/publish/maya/{name}[_{bonjour}]/@hello'
+        definition: '@asset_root/publish/maya/{foo}[_{baz}]/@hello'
 
 
     test_string:
         definition: '@asset_root/test/@hello.exr'
 
     photoshop_file:
-        definition: '@shot_root/work/{test}/photoshop/{name}.v{version}.psd'
+        definition: '@shot_root/work/{foo}/photoshop/{name}.v{version}.psd'
 
 
 strings:
-    hello: '{name}[_{test}]_v{version}.{maya_extension}'
+    hello: '{foo}[_{bar}]_v{version}.{maya_extension}'

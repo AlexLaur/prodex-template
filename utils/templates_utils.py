@@ -1,6 +1,12 @@
 import re
 import pathlib
 
+
+class SafeDict(dict):
+    def __missing__(self, key):
+        return "{" + key + "}"
+
+
 def parts_matching(path, definitions):
     """Check if the given path path has the minimum required parts to fit
     with the template.
@@ -45,9 +51,6 @@ def find_placeholder(path):
     return re.findall(r"{(\w+)}", path)
 
 
-
-
-
 def paths_categorization(paths):
     root_paths = {}
     other_paths = {}
@@ -59,11 +62,12 @@ def paths_categorization(paths):
         root_paths[key] = pathlib.Path(path)
     return other_paths, root_paths
 
+
 def remove_root_paths_from_paths(paths, root_paths):
     for root in root_paths:
         paths.pop(root)
     return paths
 
+
 def sanitize_link(link):
     return link.strip().partition(".")[0]
-

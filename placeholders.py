@@ -1,4 +1,3 @@
-
 class Placeholder(object):
     def __init__(self, name, type, *args, **kwargs):
 
@@ -9,12 +8,12 @@ class Placeholder(object):
 
     def __repr__(self):
         return "<%s %s>" % (
-            __class__.__name__,
+            self.__class__.__name__,
             self.name,
         )
 
     def __str__(self):
-        return "%s %s" % (__class__.__name__, self.name)
+        return "%s %s" % (self.__class__.__name__, self.name)
 
     def validate(self, value):
         """
@@ -58,6 +57,7 @@ class Placeholder(object):
         """
         return value
 
+
 class IntegerPlaceholder(Placeholder):
     def __init__(self, name, *args, **kwargs):
         super(IntegerPlaceholder, self).__init__(name=name, *args, **kwargs)
@@ -95,6 +95,7 @@ class IntegerPlaceholder(Placeholder):
         """
         return int(value)
 
+
 class StringPlaceholder(Placeholder):
     def __init__(self, name, *args, **kwargs):
         super(StringPlaceholder, self).__init__(name=name, *args, **kwargs)
@@ -107,3 +108,6 @@ class StringPlaceholder(Placeholder):
         :rtype: bool
         """
         return super(StringPlaceholder, self).validate(value=value)
+
+
+PLACEHOLDERS_MAPPING = {"str": StringPlaceholder, "int": IntegerPlaceholder}

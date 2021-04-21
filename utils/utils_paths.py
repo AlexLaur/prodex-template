@@ -62,7 +62,9 @@ def recurssive_parser(path, visited=None):
     # Loop throught each includes
     for _include in _includes:
 
-        include_path = get_include_as_absolute_path(file_name=path, include=_include)
+        include_path = get_include_as_absolute_path(
+            file_name=path, include=_include
+        )
 
         if not include_path:
             continue
