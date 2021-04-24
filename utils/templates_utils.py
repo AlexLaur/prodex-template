@@ -87,6 +87,55 @@ def find_static_parts(definition):
     return [x for x in tokens if x]
 
 
+def find_definition_variations(definition):
+    """Finds all possible paths for the given definition (from the template)
+
+    "{foo}"               ==> ['{foo}']
+    "{foo}_{bar}"         ==> ['{foo}_{bar}']
+    "{foo}[_{bar}]"       ==> ['{foo}', '{foo}_{bar}']
+    "{foo}_[{bar}_{baz}]" ==> ['{foo}_', '{foo}_{bar}_{baz}']
+    """
+    # split definition by optional sections
+    static_parts = re.split(r"(\[[^]]*\])", str(definition))
+
+    # seed with empty string
+    definitions = [""]
+    for static_part in static_parts:
+        temp_definitions = []
+        # regex return some blank strings, skip them
+        if static_part == "":
+            continue
+        if static_part.startswith("["):
+            # check that optional contains a key
+            if not re.search(r"{(\w+)}", static_part):
+                raise Exception(
+                    'Optional sections must include a key definition. Token: "%s" Template: %s'
+                    % (static_part, self)
+                )
+
+            # Add definitions skipping this optional value
+            temp_definitions = definitions[:]
+            # strip brackets from static_part
+            static_part = re.sub(r"[\[\]]", "", static_part)
+
+        # check non-optional contains no dangleing brackets
+        if re.search(r"[\[\]]", static_part):
+            raise Exception(
+                "Square brackets are not allowed outside of optional section definitions."
+            )
+
+        # make defintions with static_part appended
+        for definition in definitions:
+            temp_definitions.append(str(definition) + static_part)
+
+        definitions = temp_definitions
+
+    # Sort the list DESC
+    definitions.sort(key=lambda x: len(x), reverse=True)
+
+    return definitions
+
+
 def decompose_definition(definition, static_part):
     """Decompose a definition in order to have a static part followed by a
     placeholder

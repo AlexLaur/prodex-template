@@ -49,19 +49,3 @@ def test_validation_path(config):
     path = "/prod/project/shot/work/photoshop/snapshots/foo_bar.v003.0001.psd"
     expected = True
     assert template.validate(path=path) == expected
-
-
-def test_get_definitions(config):
-    """Private method is tested here
-    Try to get all possible definition for a template
-    """
-    expected = [
-        "/prod/project/shot/work/maya/snapshots/{name}/{shot}_{name}.v{version}.{timestamp}.{maya_extension}",
-        "/prod/project/shot/work/maya/snapshots/{name}/{shot}_.v{version}.{timestamp}.{maya_extension}",
-        "/prod/project/shot/work/maya/snapshots/{shot}_{name}.v{version}.{timestamp}.{maya_extension}",
-        "/prod/project/shot/work/maya/snapshots/{shot}_.v{version}.{timestamp}.{maya_extension}",
-    ]
-    template = config.templates.get("maya_shot_snapshot")
-    assert (
-        template._definition_variations(definition=template._path) == expected
-    )

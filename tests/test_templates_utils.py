@@ -104,3 +104,20 @@ def test_decompose_definition(definition, static_part, expected):
         templates_utils.decompose_definition(definition, static_part)
         == expected
     )
+
+
+def test_get_definitions():
+    """Private method is tested here
+    Try to get all possible definition for a template
+    """
+    expected = [
+        "/prod/project/shot/work/maya/snapshots/{name}/{shot}_{name}.v{version}.{timestamp}.{maya_extension}",
+        "/prod/project/shot/work/maya/snapshots/{name}/{shot}_.v{version}.{timestamp}.{maya_extension}",
+        "/prod/project/shot/work/maya/snapshots/{shot}_{name}.v{version}.{timestamp}.{maya_extension}",
+        "/prod/project/shot/work/maya/snapshots/{shot}_.v{version}.{timestamp}.{maya_extension}",
+    ]
+    definition = "/prod/project/shot/work/maya/snapshots[/{name}]/{shot}_[{name}].v{version}.{timestamp}.{maya_extension}"
+    assert (
+        templates_utils.find_definition_variations(definition=definition)
+        == expected
+    )

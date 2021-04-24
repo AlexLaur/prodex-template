@@ -85,15 +85,15 @@ class ProdexTemplate(object):
 
             for index, part in enumerate(path.parts):
                 if index == 0 and part.startswith("@"):
-                    token = templates_utils.sanitize_link(link=part)
-                    found = self._root_paths.get(token[1::], None)
+                    static_part = templates_utils.sanitize_link(link=part)
+                    found = self._root_paths.get(static_part[1::], None)
                     if not found:
                         raise ValueError("No root path found for %s" % part)
                     parts[index] = found
 
                 elif part.startswith("@"):
-                    token = templates_utils.sanitize_link(link=part)
-                    found = self._strings.get(token[1::], None)
+                    static_part = templates_utils.sanitize_link(link=part)
+                    found = self._strings.get(static_part[1::], None)
                     if not found:
                         raise ValueError("No string path found for %s" % part)
                     parts[index] = found
@@ -171,7 +171,9 @@ class Template(object):
         self._name = name
         self._placeholders = placeholders
 
-        self._all_definitions = self._definition_variations(self._path)
+        self._all_definitions = templates_utils.find_definition_variations(
+            self._path
+        )
 
     def __repr__(self):
         return self._get_repr()
@@ -247,54 +249,6 @@ class Template(object):
                 match = True
         return match
 
-    def _definition_variations(self, definition):
-        """Finds all possible paths for the given definition (from the template)
-
-        "{foo}"               ==> ['{foo}']
-        "{foo}_{bar}"         ==> ['{foo}_{bar}']
-        "{foo}[_{bar}]"       ==> ['{foo}', '{foo}_{bar}']
-        "{foo}_[{bar}_{baz}]" ==> ['{foo}_', '{foo}_{bar}_{baz}']
-        """
-        # split definition by optional sections
-        tokens = re.split(r"(\[[^]]*\])", str(definition))
-
-        # seed with empty string
-        definitions = [""]
-        for token in tokens:
-            temp_definitions = []
-            # regex return some blank strings, skip them
-            if token == "":
-                continue
-            if token.startswith("["):
-                # check that optional contains a key
-                if not re.search(r"{(\w+)}", token):
-                    raise Exception(
-                        'Optional sections must include a key definition. Token: "%s" Template: %s'
-                        % (token, self)
-                    )
-
-                # Add definitions skipping this optional value
-                temp_definitions = definitions[:]
-                # strip brackets from token
-                token = re.sub(r"[\[\]]", "", token)
-
-            # check non-optional contains no dangleing brackets
-            if re.search(r"[\[\]]", token):
-                raise Exception(
-                    "Square brackets are not allowed outside of optional section definitions."
-                )
-
-            # make defintions with token appended
-            for definition in definitions:
-                temp_definitions.append(str(definition) + token)
-
-            definitions = temp_definitions
-
-        # Sort the list DESC
-        definitions.sort(key=lambda x: len(x), reverse=True)
-
-        return definitions
-
     def get_placeholders_values(self, path):
         """Gets the placeholders values from the given path.
 
@@ -316,33 +270,36 @@ class Template(object):
             resolved = {}  # All resolved placeholders
             _definition = definition
             _path = path
-            tokens = templates_utils.find_static_parts(definition=definition)
-            tokens.reverse()
+            static_parts = templates_utils.find_static_parts(
+                definition=definition
+            )
+            static_parts.reverse()
 
-            if tokens[0] not in self.placeholders:
-                token = tokens[0]
-                # The first token is not a placeholder. So, transform the path
+            if static_parts[0] not in self.placeholders:
+                static_part = static_parts[0]
+                # The first static_part is not a placeholder. So, transform the path
                 # and the definition in order to start by a placeholder
-                _path = path.rpartition(token)[0]
+                _path = path.rpartition(static_part)[0]
                 _definition = templates_utils.decompose_definition(
-                    definition=definition, static_part=token
+                    definition=definition, static_part=static_part
                 )[0]
-                # Remove the first token because we want to start
+                # Remove the first static_part because we want to start
                 # by a placeholder
-                tokens = tokens[1::]
+                static_parts = static_parts[1::]
 
-            tokens = [x for x in tokens if x not in self.placeholders]
-            for token in tokens:
-                path_decompose = _path.rpartition(token)
+            static_parts = [
+                x for x in static_parts if x not in self.placeholders
+            ]
+            for static_part in static_parts:
+                path_decompose = _path.rpartition(static_part)
                 definition_decompose = templates_utils.decompose_definition(
-                    definition=_definition, static_part=token
+                    definition=_definition, static_part=static_part
                 )
 
                 key = definition_decompose[-1]
                 value = path_decompose[-1]
 
                 placeholder_obj = self.placeholders.get(key.strip("{}"))
-                # print(key, placeholder_obj)
                 if not placeholder_obj.validate(value):
                     # The value is not conform for the given placeholder
                     error = "The value {0} is not conform for the placeholder {1}".format(
@@ -356,8 +313,10 @@ class Template(object):
                     and not path_decompose[1]
                     and not path_decompose[2]
                 ):
-                    # path and token are not synchronized, so it is not the path
-                    error = "Path and the token aren't synchronised anymore"
+                    # path and static_part are not synchronized, so it is not the path
+                    error = (
+                        "Path and the static_part aren't synchronised anymore"
+                    )
                     # print(error)
                     break
 
