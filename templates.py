@@ -233,7 +233,9 @@ class Template(object):
 
         # 2. Try to resolve placeholders. If we found something, the path is
         # correct, if not, the path doesn't fit the template.
-        resolved_placeholders = self.get_placeholders_values(path=path)
+        resolved_placeholders = self.get_placeholders_values(
+            path=path, discreet=True
+        )
         if not resolved_placeholders:
             return False
 
@@ -249,7 +251,7 @@ class Template(object):
                 match = True
         return match
 
-    def get_placeholders_values(self, path):
+    def get_placeholders_values(self, path, **kwargs):
         """Gets the placeholders values from the given path.
 
         Example::
@@ -258,14 +260,18 @@ class Template(object):
             definition: '/prod/poject/{project}/{name}_v{version}.{maya_extension}'
             >>> path = '/prod/project/foo/bar_v001.ma'
             >>> get_placeholders_values(path=path)
-            >>> {"project": "foo", "name": "bar", "version": "1", "maya_extension": "ma"}
+            >>> {"project": "foo", "name": "bar", "version": 1, "maya_extension": "ma"}
 
         :param path: The input path
         :type path: str
+        :param discreet: (kwargs) Raise errors, optional
+        :type discreet: bool
         :returns: Values found Values in the path based on placeholders in template
         :rtype: dict
         """
+        discreet = kwargs.get("discreet", False)  # False: raise errors
         error = None
+        # loop through all definitions
         for definition in self.definitions:
             resolved = {}  # All resolved placeholders
             _definition = definition
@@ -302,22 +308,20 @@ class Template(object):
                 placeholder_obj = self.placeholders.get(key.strip("{}"))
                 if not placeholder_obj.validate(value):
                     # The value is not conform for the given placeholder
-                    error = "The value {0} is not conform for the placeholder {1}".format(
-                        value, placeholder_obj.name
+                    error = errors.ProdexTemplatePlaceholderValidation(
+                        "The value {0} is not conform for the placeholder {1}".format(
+                            value, placeholder_obj.name
+                        )
                     )
-                    # print(error)
                     break
 
-                if (
-                    not path_decompose[0]
-                    and not path_decompose[1]
-                    and not path_decompose[2]
-                ):
-                    # path and static_part are not synchronized, so it is not the path
-                    error = (
+                # All values are empty
+                if len(set(path_decompose)) == 1:
+                    # path and static_part are not synchronized,
+                    # so it is not the path what we are looking for
+                    error = errors.ProdexTemplatePathSync(
                         "Path and the static_part aren't synchronised anymore"
                     )
-                    # print(error)
                     break
 
                 if placeholder_obj.name in resolved:
@@ -325,10 +329,11 @@ class Template(object):
                     _value = resolved.get(placeholder_obj.name)
                     value = placeholder_obj.sanitize_value(value)
                     if value != _value:
-                        error = "Got two differents values for the {0} [{1}, {2}]".format(
-                            placeholder_obj.name, _value, value
+                        error = errors.ProdexTemplatePlaceholderMultipleValues(
+                            "Got two differents values for the {0} [{1}, {2}]".format(
+                                placeholder_obj.name, _value, value
+                            )
                         )
-                        # print(error)
                         break
                 else:
                     error = None
@@ -347,6 +352,8 @@ class Template(object):
                 return resolved
             else:
                 resolved = {}
+        if not discreet:
+            raise error
         return resolved
 
     def set_placeholders_values(self, placeholders):
