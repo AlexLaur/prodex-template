@@ -62,7 +62,7 @@ class IntegerPlaceholder(Placeholder):
     def __init__(self, name, *args, **kwargs):
         super(IntegerPlaceholder, self).__init__(name=name, *args, **kwargs)
 
-        self.format_spec = kwargs.get("format_spec", "%01d")
+        self.format_spec = kwargs.get("format_spec", 1)
         # self.length = kwargs.get("length", 1)
 
     def validate(self, value):

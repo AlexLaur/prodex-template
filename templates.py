@@ -295,14 +295,6 @@ class Template(object):
 
         return definitions
 
-    def _calc_static_tokens(self, definition):
-        """
-        Finds the tokens from a definition which are not involved in defining keys.
-        """
-        tokens = re.split(r"{(\w+)}", definition)
-        # Remove empty strings
-        return [x for x in tokens if x]
-
     def get_placeholders_values(self, path):
         """Gets the placeholders values from the given path.
 
@@ -324,7 +316,7 @@ class Template(object):
             resolved = {}  # All resolved placeholders
             _definition = definition
             _path = path
-            tokens = self._calc_static_tokens(definition=definition)
+            tokens = templates_utils.find_static_parts(definition=definition)
             tokens.reverse()
 
             if tokens[0] not in self.placeholders:
@@ -332,7 +324,9 @@ class Template(object):
                 # The first token is not a placeholder. So, transform the path
                 # and the definition in order to start by a placeholder
                 _path = path.rpartition(token)[0]
-                _definition = definition.rpartition(token)[0]
+                _definition = templates_utils.decompose_definition(
+                    definition=definition, static_part=token
+                )[0]
                 # Remove the first token because we want to start
                 # by a placeholder
                 tokens = tokens[1::]
@@ -340,17 +334,21 @@ class Template(object):
             tokens = [x for x in tokens if x not in self.placeholders]
             for token in tokens:
                 path_decompose = _path.rpartition(token)
-                definition_decompose = _definition.rpartition(token)
+                definition_decompose = templates_utils.decompose_definition(
+                    definition=_definition, static_part=token
+                )
 
                 key = definition_decompose[-1]
                 value = path_decompose[-1]
 
                 placeholder_obj = self.placeholders.get(key.strip("{}"))
+                # print(key, placeholder_obj)
                 if not placeholder_obj.validate(value):
                     # The value is not conform for the given placeholder
                     error = "The value {0} is not conform for the placeholder {1}".format(
                         value, placeholder_obj.name
                     )
+                    # print(error)
                     break
 
                 if (
@@ -360,23 +358,24 @@ class Template(object):
                 ):
                     # path and token are not synchronized, so it is not the path
                     error = "Path and the token aren't synchronised anymore"
+                    # print(error)
                     break
 
                 if placeholder_obj.name in resolved:
                     # already analysed, check that the value is the same
                     _value = resolved.get(placeholder_obj.name)
+                    value = placeholder_obj.sanitize_value(value)
                     if value != _value:
                         error = "Got two differents values for the {0} [{1}, {2}]".format(
                             placeholder_obj.name, _value, value
                         )
+                        # print(error)
                         break
                 else:
                     error = None
                     resolved[
                         placeholder_obj.name
                     ] = placeholder_obj.sanitize_value(value)
-                    # print(value)
-                    # print(placeholder_obj.sanitize_value(value))
 
                 _path = path_decompose[0]
                 _definition = definition_decompose[0]

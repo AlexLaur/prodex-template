@@ -36,6 +36,28 @@ def parts_matching(path, definitions):
     return matching
 
 
+def is_placeholder(placeholder):
+    """Test if the placeholder is a correct placeholder.
+    To be a correct placeholder, the placeholder needs to be embrasse
+    like this : {placeholder}
+
+    >>> is_placeholder("{foo}")
+    >>> True
+    >>> is_placeholder("{bar")
+    >>> False
+    >>> is_placeholder("baz")
+    >>> False
+
+    :param placeholder: The placeholder to test
+    :type placeholder: str
+    :return: True if it is ok, False if not
+    :rtype: bool
+    """
+    if re.match(r"{(\w+)}", placeholder):
+        return True
+    return False
+
+
 def find_placeholder(path):
     """Find all placeholders in the given path
 
@@ -51,6 +73,59 @@ def find_placeholder(path):
     return re.findall(r"{(\w+)}", path)
 
 
+def find_static_parts(definition):
+    """Find static parts in the definition. Static parts are some elements
+    between placeholders.
+
+    :param definition: The definition to analyse
+    :type definition: str
+    :return: All static parts
+    :rtype: list
+    """
+    tokens = re.split(r"{(\w+)}", definition)
+    # Remove empty strings
+    return [x for x in tokens if x]
+
+
+def decompose_definition(definition, static_part):
+    """Decompose a definition in order to have a static part followed by a
+    placeholder
+
+    >>> definition = "/prod/project/shot/review/{shot}_{name}_{nuke_output}_v{version}"
+    >>> static_part = "_v"
+    >>> decompose_definition(definition, static_part)
+    >>> ('/prod/project/shot/review/{shot}_{name}_{nuke_output}', '_v', '{version}')
+
+    >>> definition = "/prod/project/shot/review/{shot}_{name}_{nuke_output}"
+    >>> static_part = "_"
+    >>> decompose_definition(definition, static_part)
+    >>> ('/prod/project/shot/review/{shot}_{name}', '_', '{nuke_output}')
+
+    :param definition: The definition to decompose
+    :type definition: str
+    :param static_part: The static part (element between two placeholders)
+    :type static_part: str
+    :return: The decomposed definition
+    :rtype: tuple
+    """
+    decompose = definition.rpartition(static_part)
+    if not decompose[-1]:
+        # In some case when the definition doesn't end by a placeholders
+        return decompose
+    if is_placeholder(placeholder=decompose[-1]):
+        # It is a fully placeholder
+        return decompose
+    # At this point, it is a partial placeholder. We need to find where is the
+    # right static_part
+    count = 1
+    placeholder = definition[-count]
+    while not is_placeholder(placeholder):
+        placeholder = definition[-count:]
+        count += 1
+    base = definition[0 : len(definition) - count]
+    return (base, static_part, placeholder)
+
+
 def paths_categorization(paths):
     root_paths = {}
     other_paths = {}
@@ -61,12 +136,6 @@ def paths_categorization(paths):
             continue
         root_paths[key] = pathlib.Path(path)
     return other_paths, root_paths
-
-
-def remove_root_paths_from_paths(paths, root_paths):
-    for root in root_paths:
-        paths.pop(root)
-    return paths
 
 
 def sanitize_link(link):
