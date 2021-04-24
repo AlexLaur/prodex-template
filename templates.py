@@ -2,7 +2,7 @@ import re
 import yaml
 import pathlib
 
-from utils import utils_paths, templates_utils
+from utils import paths_utils, templates_utils
 from placeholders import (
     StringPlaceholder,
     IntegerPlaceholder,
@@ -28,7 +28,7 @@ class ProdexTemplate(object):
         self._strings = {}
 
         # Init vars
-        self._content = utils_paths.recurssive_parser(
+        self._content = paths_utils.recurssive_parser(
             path=self.template_path, visited=[]
         )
         self._paths, self._root_paths = templates_utils.paths_categorization(

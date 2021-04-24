@@ -5,9 +5,7 @@ import yaml
 from errors import ProdexTemplateCircular
 
 
-def get_include_as_absolute_path(
-    file_name: pathlib.Path, include: str
-) -> pathlib.Path:
+def get_include_as_absolute_path(file_name, include):
     """Return the absolute path of any includes in the config file
 
     :param file_name: The path of the parsed config from wich the include was
@@ -18,17 +16,13 @@ def get_include_as_absolute_path(
     :return: The absolute path if the file exists, None instead
     :rtype: pathlib.Path
     """
-
     include_path = pathlib.Path(include)
-
     if not include_path.is_absolute():
         # The path is not an absolute path, convert it.
         include_path = file_name.parent / include_path
-
     if not include_path.exists():
         # Ensure that the file exists
         return None
-
     return include_path
 
 
@@ -40,14 +34,12 @@ def recurssive_parser(path, visited=None):
     :param visited: The list of all dependencies which have been visited,
     defaults to None
     :type visited: list, optional
-    :raises ValueError: [description]
-    :return: [description]
-    :rtype: [type]
+    :raises ProdexTemplateCircular: Raised if circular import is detected.
+    :return: The data collected in all config files
+    :rtype: dict
     """
-
     if path in visited:
-        raise ValueError("Circular Import")
-
+        raise ProdexTemplateCircular("Circular Import detected in templates.")
     visited.append(path)
 
     # Parse the data
@@ -65,7 +57,6 @@ def recurssive_parser(path, visited=None):
         include_path = get_include_as_absolute_path(
             file_name=path, include=_include
         )
-
         if not include_path:
             continue
 
