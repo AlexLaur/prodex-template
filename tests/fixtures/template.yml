@@ -1,41 +1,322 @@
-include:
+#
+# The includes section contains all others configs files. For example, you can decompose this
+# configurations into multiples configs (a config for nuke, another for maya...).
+# Paths are ralative to this config. Absolute paths are also valids.
+#
+
+includes:
+    - './template_nuke.yml'
+
+#
+# The placeholders section contains the definitions for all the different placeholders.
+# A placeholder is a magic token that is replaced by a value at runtime, for example {shot}.
+#
 
 placeholders:
+    sequence:
+        type: str
+    shot:
+        type: str
+    asset:
+        type: str
+    name:
+        type: str
+        filter_by: alphanumeric
+    iteration:
+        type: int
+        format_spec: 4
     version:
         type: int
         format_spec: 3
-
-    name:
+    timestamp:
+        type: str
+    width:
+        type: int
+    height:
+        type: int
+    segment_name:
         type: str
 
+    nuke_output:
+        alias: output
+        type: str
+        filter_by: alphanumeric
+
+    # Represents the optional output name for frames written by the After Effects Publish Rendering Plugin
+    afx_comp:
+        alias: comp
+        type: str
+        filter_by: alphanumeric
+    afx_mov_ext:
+        alias: extension
+        type: str
+        choices:
+            mov: Quicktime Movie (.mov)
+            avi: Audio Video Interleaved (.avi)
+
+    eye:
+        type: str
+
+    houdini_node:
+        alias: node
+        type: str
+    aov_name:
+        type: str
+
+    # these are used by the Hiero exporter and pipeline
+    YYYY:
+        type: int
+        format_spec: 4
+    MM:
+        type: int
+        format_spec: 2
+    DD:
+        type: int
+        format_spec: 2
+        alias: DD
     project:
         type: str
 
-    render_extension:
-        type: str
-        choices:
-            mp4: MP4
-            mov: Mov
-        default: mp4
-
+    # Maya supports two extension types.
     maya_extension:
         type: str
         choices:
             ma: Maya Ascii (.ma)
             mb: Maya Binary (.mb)
         default: ma
+        alias: extension
 
-    foo:
-        type: str
-    bar:
-        type: str
-    baz:
-        type: str
+#
+# The paths section contains all the the key locations where files are to be stored
+# Each path is made up of several keys (like {version} or {shot}) and
+# these are defined in the keys section above.
+#
 
 paths:
 
+    # Common path definitions to use as shorthand in order to avoid repetitive and verbose
+    # templates. This also makes it easy to change any of the common root paths and have the
+    # changes apply to all templates that use them.
     asset_root: '/prod/project/asset'
     shot_root: '/prod/project/shot'
+
+    ##########################################################################################
+    # Project level paths
+    #
+
+    #
+    # Hiero
+    #
+
+    # The location of WIP files
+    hiero_project_work:
+        definition: 'editorial/work/{name}_v{version}.hrox'
+    hiero_project_work_area:
+        definition: 'editorial/work'
+    # The location of backups of WIP files
+    hiero_project_snapshot:
+        definition: 'editorial/work/snapshots/{name}_v{version}_{timestamp}.hrox'
+    # The location of published hiero files
+    hiero_project_publish:
+        definition: 'editorial/publish/{name}_v{version}.hrox'
+    hiero_project_publish_area:
+        definition: 'editorial/publish'
+
+
+    ##########################################################################################
+    # sequence level paths
+    #
+
+
+    ##########################################################################################
+    # shot level paths
+    #
+
+    #
+    # Flame
+    #
+
+    flame_segment_clip:
+        definition: 'sequences/{sequence}/{shot}/finishing/clip/sources/{segment_name}.clip'
+    flame_shot_clip:
+        definition: 'sequences/{sequence}/{shot}/finishing/clip/{shot}.clip'
+    flame_shot_batch:
+        definition: 'sequences/{sequence}/{shot}/finishing/batch/{shot}.v{version}.batch'
+    #
+    # Photoshop
+    #
+
+    # The location of WIP files
+    photoshop_shot_work:
+        definition: '@shot_root/work/photoshop/{name}.v{version}.psd'
+    shot_work_area_photoshop:
+        definition: '@shot_root/work/photoshop'
+    # The location of backups of WIP files
+    photoshop_shot_snapshot:
+        definition: '@shot_root/work/photoshop/snapshots/{name}.v{version}.{iteration}.psd'
+    # The location of published files
+    shot_publish_area_photoshop:
+        definition: '@shot_root/publish/photoshop'
+    photoshop_shot_publish:
+        definition: '@shot_root/publish/photoshop/{name}.v{version}.psd'
+
+    #
+    # After Effects
+    #
+
+    # The location of WIP files
+    aftereffects_shot_work:
+        definition: '@shot_root/work/afx/{name}.v{version}.aep'
+    shot_work_area_aftereffects:
+        definition: '@shot_root/work/afx'
+    # The location of backups of WIP files
+    aftereffects_shot_snapshot:
+        definition: '@shot_root/work/afx/snapshots/{name}.v{version}.{timestamp}.aep'
+    # The location of published files
+    shot_publish_area_aftereffects:
+        definition: '@shot_root/publish/afx'
+    aftereffects_shot_publish:
+        definition: '@shot_root/publish/afx/{name}.v{version}.aep'
+
+    #
+    # Maya
+    #
+
+    # define the location of a work area
+    shot_work_area_maya:
+        definition: '@shot_root/work/maya'
+    # define the location of a publish area
+    shot_publish_area_maya:
+        definition: '@shot_root/publish/maya'
+    # The location of WIP files
+    maya_shot_work:
+        definition: '@shot_root/work/maya/{name}.v{version}.{maya_extension}'
+    # The location of backups of WIP files
+    maya_shot_snapshot:
+        definition: '@shot_root/work/maya/snapshots[/{name}]/{shot}_[{name}].v{version}.{timestamp}.{maya_extension}'
+    # The location of published maya files
+    maya_shot_publish:
+        definition: '@shot_root/publish/maya/{name}.v{version}.{maya_extension}'
+
+
+    #
+    # Houdini
+    #
+
+    # define the location of a work area
+    shot_work_area_houdini:
+        definition: '@shot_root/work/houdini'
+    # define the location of a publish area
+    shot_publish_area_houdini:
+        definition: '@shot_root/publish/houdini'
+    # The location of WIP files
+    houdini_shot_work:
+        definition: '@shot_root/work/houdini/{name}.v{version}.hip'
+    # The location of backups of WIP files
+    houdini_shot_snapshot:
+        definition: '@shot_root/work/houdini/snapshots/{name}.v{version}.{timestamp}.hip'
+    # The location of published houdini files
+    houdini_shot_publish:
+        definition: '@shot_root/publish/houdini/{name}.v{version}.hip'
+    # Alembic caches
+    houdini_shot_work_alembic_cache:
+        definition: '@shot_root/work/houdini/cache/alembic/{name}/{houdini_node}/v{version}/{shot}_{name}_v{version}.abc'
+
+    #
+    # 3dsmax
+    #
+
+    # define the location of a work area
+    shot_work_area_max:
+        definition: '@shot_root/work/3dsmax'
+    # define the location of a publish area
+    shot_publish_area_max:
+        definition: '@shot_root/publish/3dsmax'
+    # The location of WIP files
+    max_shot_work:
+        definition: '@shot_root/work/3dsmax/{name}.v{version}.max'
+    # The location of backups of WIP files
+    max_shot_snapshot:
+        definition: '@shot_root/work/3dsmax/snapshots/{name}.v{version}.{timestamp}.max'
+    # The location of published max files
+    max_shot_publish:
+        definition: '@shot_root/publish/3dsmax/{name}.v{version}.max'
+
+
+    #
+    # Motionbuilder
+    #
+
+    # define the location of a work area
+    shot_work_area_mobu:
+        definition: '@shot_root/work/mobu'
+    # define the location of a publish area
+    shot_publish_area_mobu:
+        definition: '@shot_root/publish/mobu'
+    # The location of WIP files
+    mobu_shot_work:
+        definition: '@shot_root/work/mobu/{name}.v{version}.fbx'
+    # The location of backups of WIP files
+    mobu_shot_snapshot:
+        definition: '@shot_root/work/mobu/snapshots/{name}.v{version}.{timestamp}.fbx'
+    # The location of published mobu files
+    mobu_shot_publish:
+        definition: '@shot_root/publish/mobu/{name}.v{version}.fbx'
+
+    #
+    # Hiero
+    #
+
+    # export of shot asset data from hiero
+    hiero_plate_path:
+        definition: 'sequences/{sequence}/{shot}/editorial/{YYYY}_{MM}_{DD}[_{name}]/plates/{project}_{shot}.mov'
+    ##########################################################################################
+    # asset pipeline
+
+
+    #
+    # Alembic caches
+    #
+
+    asset_alembic_cache:
+        definition: '@asset_root/publish/caches/{name}.v{version}.abc'
+
+
+    #
+    # Photoshop
+    #
+
+    # The location of WIP files
+    photoshop_asset_work:
+        definition: '@asset_root/work/photoshop/{name}.v{version}.psd'
+    asset_work_area_photoshop:
+        definition: '@asset_root/work/photoshop'
+    # The location of backups of WIP files
+    photoshop_asset_snapshot:
+        definition: '@asset_root/work/photoshop/snapshots/{name}.v{version}.{timestamp}.psd'
+    # The location of published files
+    asset_publish_area_photoshop:
+        definition: '@asset_root/publish/photoshop'
+    photoshop_asset_publish:
+        definition: '@asset_root/publish/photoshop/{name}.v{version}.psd'
+
+    #
+    # after effects
+    #
+
+    # The location of WIP files
+    aftereffects_asset_work:
+        definition: '@asset_root/work/afx/{name}.v{version}.aep'
+    asset_work_area_aftereffects:
+        definition: '@asset_root/work/afx'
+    # The location of backups of WIP files
+    aftereffects_asset_snapshot:
+        definition: '@asset_root/work/afx/snapshots/{name}.v{version}.{timestamp}.aep'
+    # The location of published files
+    asset_publish_area_aftereffects:
+        definition: '@asset_root/publish/afx'
+    aftereffects_asset_publish:
+        definition: '@asset_root/publish/afx/{name}.v{version}.aep'
 
     #
     # Maya
@@ -50,17 +331,89 @@ paths:
     # The location of WIP files
     maya_asset_work:
         definition: '@asset_root/work/maya/{name}.v{version}.{maya_extension}'
+    # The location of backups of WIP files
+    maya_asset_snapshot:
+        definition: '@asset_root/work/maya/snapshots/{name}.v{version}.{timestamp}.{maya_extension}'
     # The location of published maya files
     maya_asset_publish:
-        definition: '@asset_root/publish/maya/{foo}[_{baz}]/@hello'
+        definition: '@asset_root/publish/maya/{name}.v{version}.{maya_extension}'
 
 
-    test_string:
-        definition: '@asset_root/test/@hello.exr'
+    #
+    # Houdini
+    #
 
-    photoshop_file:
-        definition: '@shot_root/work/{foo}/photoshop/{name}.v{version}.psd'
+    # define the location of a work area
+    asset_work_area_houdini:
+        definition: '@asset_root/work/houdini'
+    # define the location of a publish area
+    asset_publish_area_houdini:
+        definition: '@asset_root/publish/houdini'
+    # The location of WIP files
+    houdini_asset_work:
+        definition: '@asset_root/work/houdini/{name}.v{version}.hip'
+    # The location of backups of WIP files
+    houdini_asset_snapshot:
+        definition: '@asset_root/work/houdini/snapshots/{name}.v{version}.{timestamp}.hip'
+    # The location of published houdini files
+    houdini_asset_publish:
+        definition: '@asset_root/publish/houdini/{name}.v{version}.hip'
+    # Alembic caches
+    houdini_asset_work_alembic_cache:
+        definition: '@asset_root/work/houdini/cache/alembic/{name}/{houdini_node}/v{version}/{asset}_{name}_v{version}.abc'
 
+    #
+    # 3dsmax
+    #
+
+    # define the location of a work area
+    asset_work_area_max:
+        definition: '@asset_root/work/3dsmax'
+    # define the location of a publish area
+    asset_publish_area_max:
+        definition: '@asset_root/publish/3dsmax'
+    # The location of WIP files
+    max_asset_work:
+        definition: '@asset_root/work/3dsmax/{name}.v{version}.max'
+    # The location of backups of WIP files
+    max_asset_snapshot:
+        definition: '@asset_root/work/3dsmax/snapshots/{name}.v{version}.{timestamp}.max'
+    # The location of published max files
+    max_asset_publish:
+        definition: '@asset_root/publish/3dsmax/{name}.v{version}.max'
+
+
+    #
+    # Motionbuilder
+    #
+
+    # define the location of a work area
+    asset_work_area_mobu:
+        definition: '@asset_root/work/mobu'
+    # define the location of a publish area
+    asset_publish_area_mobu:
+        definition: '@asset_root/publish/mobu'
+    # The location of WIP files
+    mobu_asset_work:
+        definition: '@asset_root/work/mobu/{name}.v{version}.fbx'
+    # The location of backups of WIP files
+    mobu_asset_snapshot:
+        definition: '@asset_root/work/mobu/snapshots/{name}.v{version}.{timestamp}.fbx'
+    # The location of published Motionbuilder files
+    mobu_asset_publish:
+        definition: '@asset_root/publish/mobu/{name}.v{version}.fbx'
+
+#
+# The strings section is similar to the paths section - but rather than defining paths
+# on disk, it contains a list of strings.
+#
 
 strings:
-    hello: '{foo}[_{bar}]_v{version}.{maya_extension}'
+
+    shot_maya_filename: "{shot}[_{name}]_v{version}.{maya_extension}"
+
+    # nuke_shot_version_name: "{shot}_{name}_{nuke_output}_v{version}.{iteration}"
+    # nuke_quick_shot_version_name: "{shot}_{name}_quick_{iteration}"
+
+    # nuke_asset_version_name: "{asset}_{name}_{nuke_output}_v{version}.{iteration}"
+    # nuke_quick_asset_version_name: "{asset}_{name}_quick_{iteration}"

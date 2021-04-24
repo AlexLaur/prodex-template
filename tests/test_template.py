@@ -6,65 +6,62 @@ from templates import ProdexTemplate
 
 SCRIPT_PATH = os.path.dirname(__file__)
 CONFIG_FILENAME = os.path.join(SCRIPT_PATH, "fixtures", "template.yml")
-CONFIG_OBJ = ProdexTemplate(path=CONFIG_FILENAME)
 
 
-def test_get_template():
+@pytest.fixture
+def config():
+    return ProdexTemplate(path=CONFIG_FILENAME)
+
+
+def test_get_template(config):
     """Get the corresponding template from the path"""
-    path = "/prod/project/asset/publish/maya/foo/foo_bar_v001.ma"
-    expected = CONFIG_OBJ.templates.get("maya_asset_publish")
-    assert CONFIG_OBJ.template_from_path(path) == expected
+    path = "/prod/project/shot/work/maya/foo.v003.ma"
+    expected = config.templates.get("maya_shot_work")
+    assert config.template_from_path(path) == expected
 
 
-def test_get_placeholders():
+def test_get_placeholders(config):
     """Get placeholders values from the path"""
-    template = CONFIG_OBJ.templates.get("maya_asset_publish")
-    path = "/prod/project/asset/publish/maya/foo/foo_bar_v001.ma"
+    template = config.templates.get("houdini_asset_work_alembic_cache")
+    path = "/prod/project/asset/work/houdini/cache/alembic/foo/render_node/v001/bar_foo_v001.abc"
     expected = {
-        "maya_extension": "ma",
+        "name": "foo",
+        "houdini_node": "render_node",
         "version": 1,
-        "bar": "bar",
-        "foo": "foo",
+        "asset": "bar",
     }
     assert template.get_placeholders_values(path=path) == expected
 
 
-def test_set_placeholder():
+def test_set_placeholder(config):
     """Set placeholders on template in order to generate a path"""
-    template = CONFIG_OBJ.templates.get("maya_asset_publish")
-    placeholders = {
-        "maya_extension": "ma",
-        "version": 1,
-        "bar": "bar",
-        "foo": "foo",
-    }
-    expected = pathlib.Path(
-        "/prod/project/asset/publish/maya/foo/foo_bar_v001.ma"
-    )
+    template = config.templates.get("maya_asset_publish")
+    placeholders = {"maya_extension": "mb", "version": 1, "name": "foo"}
+    expected = pathlib.Path("/prod/project/asset/publish/maya/foo.v001.mb")
     assert (
         template.set_placeholders_values(placeholders=placeholders) == expected
     )
 
 
-def test_validation_path():
+def test_validation_path(config):
     """Validation of a path for a template"""
-    template = CONFIG_OBJ.templates.get("photoshop_file")
-    path = "/prod/project/shot/work/test/photoshop/name.v001.psd"
+    template = config.templates.get("photoshop_shot_snapshot")
+    path = "/prod/project/shot/work/photoshop/snapshots/foo_bar.v003.0001.psd"
     expected = True
     assert template.validate(path=path) == expected
 
 
-def test_get_definitions():
+def test_get_definitions(config):
     """Private method is tested here
     Try to get all possible definition for a template
     """
     expected = [
-        "/prod/project/asset/publish/maya/{foo}_{baz}/{foo}_{bar}_v{version}.{maya_extension}",
-        "/prod/project/asset/publish/maya/{foo}_{baz}/{foo}_v{version}.{maya_extension}",
-        "/prod/project/asset/publish/maya/{foo}/{foo}_{bar}_v{version}.{maya_extension}",
-        "/prod/project/asset/publish/maya/{foo}/{foo}_v{version}.{maya_extension}",
+        "/prod/project/shot/work/maya/snapshots/{name}/{shot}_{name}.v{version}.{timestamp}.{maya_extension}",
+        "/prod/project/shot/work/maya/snapshots/{name}/{shot}_.v{version}.{timestamp}.{maya_extension}",
+        "/prod/project/shot/work/maya/snapshots/{shot}_{name}.v{version}.{timestamp}.{maya_extension}",
+        "/prod/project/shot/work/maya/snapshots/{shot}_.v{version}.{timestamp}.{maya_extension}",
     ]
-    template = CONFIG_OBJ.templates.get("maya_asset_publish")
+    template = config.templates.get("maya_shot_snapshot")
     assert (
         template._definition_variations(definition=template._path) == expected
     )

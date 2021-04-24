@@ -1,0 +1,55 @@
+paths:
+
+  ##########################################################################################
+  # shot level paths
+  #
+
+  # define the location of a work area
+  shot_work_area_nuke:
+    definition: '@shot_root/work/nuke'
+  # define the location of a publish area
+  shot_publish_area_nuke:
+    definition: '@shot_root/publish/nuke'
+  # The location of WIP script files
+  nuke_shot_work:
+    definition: '@shot_root/work/nuke/{name}.v{version}.nk'
+  # The location of backups of WIP files
+  nuke_shot_snapshot:
+    definition: '@shot_root/work/nuke/snapshots/{name}.v{version}.{timestamp}.nk'
+  # The location of published nuke script files
+  nuke_shot_publish:
+    definition: '@shot_root/publish/nuke/{name}.v{version}.nk'
+  # review output
+  shot_quicktime_quick:
+    definition: '@shot_root/review/quickdaily/{shot}_{name}_{iteration}.mov'
+  nuke_shot_render_movie:
+    definition: '@shot_root/review/{shot}_{name}_{nuke_output}_v{version}.mov'
+
+  # define the location of a work area
+  asset_work_area_nuke:
+    definition: '@asset_root/work/nuke'
+  # define the location of a publish area
+  asset_publish_area_nuke:
+    definition: '@asset_root/publish'
+  # review output
+  nuke_asset_render_movie:
+    definition: '@asset_root/review/{asset}_{name}_{nuke_output}_v{version}.mov'
+  asset_quicktime_quick:
+    definition: '@asset_root/review/quickdaily/{asset}_{name}_{iteration}.mov'
+  # The location of WIP script files
+  nuke_asset_work:
+    definition: '@asset_root/work/nuke/{name}.v{version}.nk'
+  # The location of backups of WIP files
+  nuke_asset_snapshot:
+    definition: '@asset_root/work/nuke/snapshots/{name}.v{version}.{timestamp}.nk'
+  # The location of published nuke script files
+  nuke_asset_publish:
+    definition: '@asset_root/publish/nuke/{name}.v{version}.nk'
+
+strings:
+
+  nuke_shot_version_name: "{shot}_{name}_{nuke_output}_v{version}.{iteration}"
+  nuke_quick_shot_version_name: "{shot}_{name}_quick_{iteration}"
+
+  nuke_asset_version_name: "{asset}_{name}_{nuke_output}_v{version}.{iteration}"
+  nuke_quick_asset_version_name: "{asset}_{name}_quick_{iteration}"
