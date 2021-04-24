@@ -71,11 +71,7 @@ class ProdexTemplate(object):
         return self._strings.copy()
 
     def _parse_templates(self):
-        """Parse all templates found in the configuration
-
-        :raises ValueError: [description]
-        :raises ValueError: [description]
-        """
+        """Parse all templates found in the configuration"""
         for template_name, template_path in self._paths.items():
 
             path = template_path.get("definition")
@@ -88,14 +84,18 @@ class ProdexTemplate(object):
                     static_part = templates_utils.sanitize_link(link=part)
                     found = self._root_paths.get(static_part[1::], None)
                     if not found:
-                        raise ValueError("No root path found for %s" % part)
+                        raise errors.ProdexTemplateError(
+                            "No root path found for %s" % part
+                        )
                     parts[index] = found
 
                 elif part.startswith("@"):
                     static_part = templates_utils.sanitize_link(link=part)
                     found = self._strings.get(static_part[1::], None)
                     if not found:
-                        raise ValueError("No string path found for %s" % part)
+                        raise errors.ProdexTemplateError(
+                            "No string path found for %s" % part
+                        )
                     parts[index] = found
 
             new_path = pathlib.Path(*parts)
@@ -156,7 +156,9 @@ class ProdexTemplate(object):
             return matched_templates[0]
         else:
             # Multiple templates
-            raise Exception()  # TODO
+            raise errors.ProdexTemplateError(
+                "Multiple templates found: {}".format(matched_templates)
+            )
 
 
 class String(object):
@@ -370,7 +372,7 @@ class Template(object):
         """
         # Check each placeholders
         if not self._check_input_placeholders(placeholders=placeholders):
-            raise ValueError()
+            raise errors.ProdexTemplateError()
 
         # Conform each placeholders
         self._conform_input_placeholders(placeholders=placeholders)
@@ -384,9 +386,6 @@ class Template(object):
                 # Path found ! return it.
                 return pathlib.Path(path)
         return None
-        # raise errors.ProdexTemplateMissingPlaceholders(
-        #     "Required placeholders missing : %s" % unresolved_placeholders
-        #     )
 
     def _set_placeholders_values(self, definition, placeholders):
         """Apply placeholders on a definition
@@ -405,6 +404,9 @@ class Template(object):
         unresolved_placeholders = templates_utils.find_placeholder(path)
         if unresolved_placeholders:
             # We have unresolved placeholder
+            # raise errors.ProdexTemplateMissingPlaceholders(
+            #     "Required placeholders missing : %s" % unresolved_placeholders
+            #     )
             return None
         return path
 

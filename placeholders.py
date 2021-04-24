@@ -1,4 +1,7 @@
 class Placeholder(object):
+    """Basic class for Placeholders. A placeholder is represented by an
+    ambrassed word in a path. e.g: {foo}"""
+
     def __init__(self, name, type, *args, **kwargs):
 
         self.name = name
@@ -59,11 +62,14 @@ class Placeholder(object):
 
 
 class IntegerPlaceholder(Placeholder):
+    """IntegerPlaceholder represents a Placeholder
+    which will contain an Integer.
+    """
+
     def __init__(self, name, *args, **kwargs):
         super(IntegerPlaceholder, self).__init__(name=name, *args, **kwargs)
 
         self.format_spec = kwargs.get("format_spec", 1)
-        # self.length = kwargs.get("length", 1)
 
     def validate(self, value):
         """Test if a value is valid for this placeholder.
@@ -72,10 +78,11 @@ class IntegerPlaceholder(Placeholder):
         :return: True if the value is valid, False if not.
         :rtype: bool
         """
-        if isinstance(value, int):
-            return True
-        if not value.isdigit():
+        if isinstance(value, str) and not value.isdigit():
             return False
+        if not isinstance(self.sanitize_value(value), int):
+            return False
+        value = self.sanitize_value(value)
         return super(IntegerPlaceholder, self).validate(value=value)
 
     def conform_value(self, value):
@@ -97,6 +104,8 @@ class IntegerPlaceholder(Placeholder):
 
 
 class StringPlaceholder(Placeholder):
+    """StringPlaceholder represents a placeholder which will contain a string."""
+
     def __init__(self, name, *args, **kwargs):
         super(StringPlaceholder, self).__init__(name=name, *args, **kwargs)
 

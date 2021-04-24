@@ -1,5 +1,6 @@
 import re
 import pathlib
+import errors
 
 
 class SafeDict(dict):
@@ -108,7 +109,7 @@ def find_definition_variations(definition):
         if static_part.startswith("["):
             # check that optional contains a key
             if not re.search(r"{(\w+)}", static_part):
-                raise Exception(
+                raise errors.ProdexTemplateError(
                     'Optional sections must include a key definition. Token: "%s" Template: %s'
                     % (static_part, self)
                 )
@@ -120,7 +121,7 @@ def find_definition_variations(definition):
 
         # check non-optional contains no dangleing brackets
         if re.search(r"[\[\]]", static_part):
-            raise Exception(
+            raise errors.ProdexTemplateError(
                 "Square brackets are not allowed outside of optional section definitions."
             )
 

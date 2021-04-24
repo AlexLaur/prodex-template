@@ -32,7 +32,7 @@ class ProdexTemplatePlaceholderMultipleValues(ProdexTemplateError):
 
 
 class ProdexTemplatePathSync(ProdexTemplateError):
-    """Raise when the path and the definition are not synchronised. It most
+    """Raise when the path and the definition are not synchronised. In most
     case, we can just say that the tested definition doesn't correspond
     to the tested path."""
 
