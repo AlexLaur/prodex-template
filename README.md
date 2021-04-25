@@ -11,17 +11,24 @@ Template system inspired by the template system developped by `Autodesk Shotgun`
 ---
 ### Examples
 
+Initialize the template
+```python
+>>> from templates import ProdexTemplate
+>>> config_file = "tests/fixtures/template.yml"
+>>> prodex_template = ProdexTemplate(path=config_file)
+```
+
 Get the template for a path
 ```python
 >>> path = "/prod/project/asset/publish/maya/foo/foo_bar_v001.ma"
->>> template = templates.template_from_path(path=path)
+>>> template = prodex_template.template_from_path(path=path)
 >>> <Template maya_asset_publish: /prod/project/asset/publish/maya/{foo}[_{baz}]/{foo}[_{bar}]_v{version}.{maya_extension}>
 ```
 
 Get placeholders values
 ```python
 >>> path = "/prod/project/asset/publish/maya/foo/foo_bar_v001.ma"
->>> template = templates.get("maya_asset_publish")
+>>> template = prodex_template.get("maya_asset_publish")
 >>> template.get_placeholders_values(path=path)
 >>> {"maya_extension": "ma", "version": 1, "bar": "bar", "foo": "foo"}
 ```
@@ -29,7 +36,7 @@ Get placeholders values
 Generate a path from placeholders
 ```python
 >>> placeholders = {"maya_extension": "ma", "version": 1, "bar": "bar", "foo": "foo"}
->>> template = templates.get("maya_asset_publish")
+>>> template = prodex_template.get("maya_asset_publish")
 >>> template.set_placeholders_values(placeholders=placeholders)
 >>> "/prod/project/asset/publish/maya/foo/foo_bar_v001.ma"
 ```
